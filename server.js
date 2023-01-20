@@ -1,7 +1,6 @@
 //jshint esversion:6
 
 const express = require("express");
-const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require('mongoose');
 const mongodb = require('mongodb')
@@ -13,7 +12,6 @@ const app = express();
 const path = require('path');
 app.set('view engine', 'ejs');
 
-app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
 const videoDir = __dirname + '/videos';
@@ -24,8 +22,8 @@ const videoArray = fs.readdirSync(videoDir).filter(function(file) {
 
 
 app.get("/", function(req, res){
-  res.render('home');
-  res.sendFile(__dirname + "home");
+  res.render('index');
+  res.sendFile(__dirname + "index");
 });
 
 app.get("/init-video" , function(req,res){
