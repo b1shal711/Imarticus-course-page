@@ -5,8 +5,10 @@ const ejs = require("ejs");
 const mongoose = require('mongoose');
 const mongodb = require('mongodb')
 const fs = require('fs');
+const dotenv = require('dotenv');
+dotenv.config();
 
-const url = 'mongodb+srv://BishalAgarwal:B!shal711@atlascluster.2x9rxca.mongodb.net';
+const url = `mongodb+srv://BishalAgarwal:${process.env.password}@atlascluster.2x9rxca.mongodb.net`;
 const app = express();
 
 const path = require('path');
