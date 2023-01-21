@@ -6,6 +6,11 @@ const mongoose = require('mongoose');
 const mongodb = require('mongodb')
 const fs = require('fs');
 const dotenv = require('dotenv');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const findOrCreate = require("mongoose-findorcreate");
+const session = require('express-session');
+const FacebookStrategy = require('passport-facebook').Strategy;
 dotenv.config();
 
 const url = `mongodb+srv://BishalAgarwal:${process.env.password}@atlascluster.2x9rxca.mongodb.net`;
@@ -15,38 +20,104 @@ const path = require('path');
 app.set('view engine', 'ejs');
 
 app.use(express.static("public"));
+app.use(session({
+  resave: false,
+  saveUninitialized: true,
+  secret: 'SECRET'
+}));
+
+app.get('/', function(req, res) {
+  res.render('index');
+});
+
+
+var userProfile;
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+
+passport.serializeUser(function(user, cb) {
+  cb(null, user);
+});
+
+passport.deserializeUser(function(obj, cb) {
+  cb(null, obj);
+});
+
+passport.use(new GoogleStrategy({
+    clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
+    callbackURL: "http://localhost:3000/auth/google/course"
+  },
+  function(accessToken, refreshToken, profile, done) {
+    userProfile = profile;
+    return done(null, userProfile);
+  }
+));
+
+app.get('/auth/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email']
+  }));
+
+app.get('/auth/google/course',
+passport.authenticate('google', {
+  failureRedirect: '/'
+}),
+function(req, res) {
+  // Successful authentication, redirect success.
+  res.redirect('/course');
+});
+passport.use(new FacebookStrategy({
+    clientID: process.env.APP_ID,
+    clientSecret: process.env.APP_SECRET,
+    callbackURL: "http://localhost:3000/auth/facebook/course"
+  },
+  function(accessToken, refreshToken, profile, done) {
+    userProfile = profile;
+    return done(null, userProfile);
+  }
+));
+
+app.get('/auth/facebook',
+  passport.authenticate('facebook'));
+
+app.get('/auth/facebook/course',
+  passport.authenticate('facebook', { failureRedirect: '/' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/course');
+  });
+app.get("/course", function(req, res) {
+  res.render('course');
+  res.sendFile(__dirname + "course");
+});
 
 const videoDir = __dirname + '/videos';
 const videoArray = fs.readdirSync(videoDir).filter(function(file) {
-    return path.extname(file) === '.mp4';
+  return path.extname(file) === '.mp4';
 });
-
-
-
-app.get("/", function(req, res){
-  res.render('index');
-  res.sendFile(__dirname + "index");
-});
-
-app.get("/init-video" , function(req,res){
-  mongodb.MongoClient.connect(url,function(error,client){
-    if(error){
+app.get("/init-video", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
+    if (error) {
       res.json(error);
       return;
     }
-    for(let i=0; i< videoArray.length; i++){
+    for (let i = 0; i < videoArray.length; i++) {
       const db = client.db('videos');
       const bucket = new mongodb.GridFSBucket(db);
       const vidUploadStream = bucket.openUploadStream(`${i}`);
-      const vidReadStream = fs.createReadStream('videos/'+videoArray[i])
+      const vidReadStream = fs.createReadStream('videos/' + videoArray[i])
       vidReadStream.pipe(vidUploadStream);
     }
     res.status(200).send("done....");
   });
 });
 
-app.get("/whatIsML", function (req, res) {
-  mongodb.MongoClient.connect(url, function (error, client) {
+app.get("/whatIsML", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
     if (error) {
       res.status(500).json(error);
       return;
@@ -60,7 +131,9 @@ app.get("/whatIsML", function (req, res) {
 
     const db = client.db('videos');
     // GridFS Collection
-    db.collection('fs.files').findOne({filename:"0"}, (err, video) => {
+    db.collection('fs.files').findOne({
+      filename: "0"
+    }, (err, video) => {
       if (!video) {
         res.status(404).send("No video uploaded!");
         return;
@@ -93,8 +166,8 @@ app.get("/whatIsML", function (req, res) {
   });
 });
 
-app.get("/rentCostOfFlat", function (req, res) {
-  mongodb.MongoClient.connect(url, function (error, client) {
+app.get("/rentCostOfFlat", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
     if (error) {
       res.status(500).json(error);
       return;
@@ -108,7 +181,9 @@ app.get("/rentCostOfFlat", function (req, res) {
 
     const db = client.db('videos');
     // GridFS Collection
-    db.collection('fs.files').findOne({filename:"1"}, (err, video) => {
+    db.collection('fs.files').findOne({
+      filename: "1"
+    }, (err, video) => {
       if (!video) {
         res.status(404).send("No video uploaded!");
         return;
@@ -141,8 +216,8 @@ app.get("/rentCostOfFlat", function (req, res) {
   });
 });
 
-app.get("/linearRegression", function (req, res) {
-  mongodb.MongoClient.connect(url, function (error, client) {
+app.get("/linearRegression", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
     if (error) {
       res.status(500).json(error);
       return;
@@ -156,7 +231,9 @@ app.get("/linearRegression", function (req, res) {
 
     const db = client.db('videos');
     // GridFS Collection
-    db.collection('fs.files').findOne({filename:"2"}, (err, video) => {
+    db.collection('fs.files').findOne({
+      filename: "2"
+    }, (err, video) => {
       if (!video) {
         res.status(404).send("No video uploaded!");
         return;
@@ -189,8 +266,8 @@ app.get("/linearRegression", function (req, res) {
   });
 });
 
-app.get("/polymerRegression", function (req, res) {
-  mongodb.MongoClient.connect(url, function (error, client) {
+app.get("/polymerRegression", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
     if (error) {
       res.status(500).json(error);
       return;
@@ -204,7 +281,9 @@ app.get("/polymerRegression", function (req, res) {
 
     const db = client.db('videos');
     // GridFS Collection
-    db.collection('fs.files').findOne({filename:"3"}, (err, video) => {
+    db.collection('fs.files').findOne({
+      filename: "3"
+    }, (err, video) => {
       if (!video) {
         res.status(404).send("No video uploaded!");
         return;
@@ -237,8 +316,8 @@ app.get("/polymerRegression", function (req, res) {
   });
 });
 
-app.get("/spamEmailFilter", function (req, res) {
-  mongodb.MongoClient.connect(url, function (error, client) {
+app.get("/spamEmailFilter", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
     if (error) {
       res.status(500).json(error);
       return;
@@ -252,7 +331,9 @@ app.get("/spamEmailFilter", function (req, res) {
 
     const db = client.db('videos');
     // GridFS Collection
-    db.collection('fs.files').findOne({filename:"4"}, (err, video) => {
+    db.collection('fs.files').findOne({
+      filename: "4"
+    }, (err, video) => {
       if (!video) {
         res.status(404).send("No video uploaded!");
         return;
@@ -285,8 +366,8 @@ app.get("/spamEmailFilter", function (req, res) {
   });
 });
 
-app.get("/recommendationOfApps", function (req, res) {
-  mongodb.MongoClient.connect(url, function (error, client) {
+app.get("/recommendationOfApps", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
     if (error) {
       res.status(500).json(error);
       return;
@@ -300,7 +381,9 @@ app.get("/recommendationOfApps", function (req, res) {
 
     const db = client.db('videos');
     // GridFS Collection
-    db.collection('fs.files').findOne({filename:"5"}, (err, video) => {
+    db.collection('fs.files').findOne({
+      filename: "5"
+    }, (err, video) => {
       if (!video) {
         res.status(404).send("No video uploaded!");
         return;
@@ -333,8 +416,8 @@ app.get("/recommendationOfApps", function (req, res) {
   });
 });
 
-app.get("/applicationOfMLInCollege1", function (req, res) {
-  mongodb.MongoClient.connect(url, function (error, client) {
+app.get("/applicationOfMLInCollege1", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
     if (error) {
       res.status(500).json(error);
       return;
@@ -348,7 +431,9 @@ app.get("/applicationOfMLInCollege1", function (req, res) {
 
     const db = client.db('videos');
     // GridFS Collection
-    db.collection('fs.files').findOne({filename:"6"}, (err, video) => {
+    db.collection('fs.files').findOne({
+      filename: "6"
+    }, (err, video) => {
       if (!video) {
         res.status(404).send("No video uploaded!");
         return;
@@ -381,8 +466,8 @@ app.get("/applicationOfMLInCollege1", function (req, res) {
   });
 });
 
-app.get("/applicationOfMLInCollege2", function (req, res) {
-  mongodb.MongoClient.connect(url, function (error, client) {
+app.get("/applicationOfMLInCollege2", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
     if (error) {
       res.status(500).json(error);
       return;
@@ -396,7 +481,9 @@ app.get("/applicationOfMLInCollege2", function (req, res) {
 
     const db = client.db('videos');
     // GridFS Collection
-    db.collection('fs.files').findOne({filename:"7"}, (err, video) => {
+    db.collection('fs.files').findOne({
+      filename: "7"
+    }, (err, video) => {
       if (!video) {
         res.status(404).send("No video uploaded!");
         return;
@@ -429,8 +516,8 @@ app.get("/applicationOfMLInCollege2", function (req, res) {
   });
 });
 
-app.get("/neuralNetworks", function (req, res) {
-  mongodb.MongoClient.connect(url, function (error, client) {
+app.get("/neuralNetworks", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
     if (error) {
       res.status(500).json(error);
       return;
@@ -444,7 +531,9 @@ app.get("/neuralNetworks", function (req, res) {
 
     const db = client.db('videos');
     // GridFS Collection
-    db.collection('fs.files').findOne({filename:"8"}, (err, video) => {
+    db.collection('fs.files').findOne({
+      filename: "8"
+    }, (err, video) => {
       if (!video) {
         res.status(404).send("No video uploaded!");
         return;
@@ -477,8 +566,8 @@ app.get("/neuralNetworks", function (req, res) {
   });
 });
 
-app.get("/recognizingHandWrittenDigits1", function (req, res) {
-  mongodb.MongoClient.connect(url, function (error, client) {
+app.get("/recognizingHandWrittenDigits1", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
     if (error) {
       res.status(500).json(error);
       return;
@@ -492,7 +581,9 @@ app.get("/recognizingHandWrittenDigits1", function (req, res) {
 
     const db = client.db('videos');
     // GridFS Collection
-    db.collection('fs.files').findOne({filename:"9"}, (err, video) => {
+    db.collection('fs.files').findOne({
+      filename: "9"
+    }, (err, video) => {
       if (!video) {
         res.status(404).send("No video uploaded!");
         return;
@@ -525,8 +616,8 @@ app.get("/recognizingHandWrittenDigits1", function (req, res) {
   });
 });
 
-app.get("/recognizingHandWrittenDigits2", function (req, res) {
-  mongodb.MongoClient.connect(url, function (error, client) {
+app.get("/recognizingHandWrittenDigits2", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
     if (error) {
       res.status(500).json(error);
       return;
@@ -540,7 +631,9 @@ app.get("/recognizingHandWrittenDigits2", function (req, res) {
 
     const db = client.db('videos');
     // GridFS Collection
-    db.collection('fs.files').findOne({filename:"10"}, (err, video) => {
+    db.collection('fs.files').findOne({
+      filename: "10"
+    }, (err, video) => {
       if (!video) {
         res.status(404).send("No video uploaded!");
         return;
@@ -573,8 +666,8 @@ app.get("/recognizingHandWrittenDigits2", function (req, res) {
   });
 });
 
-app.get("/deepLearning", function (req, res) {
-  mongodb.MongoClient.connect(url, function (error, client) {
+app.get("/deepLearning", function(req, res) {
+  mongodb.MongoClient.connect(url, function(error, client) {
     if (error) {
       res.status(500).json(error);
       return;
@@ -588,7 +681,9 @@ app.get("/deepLearning", function (req, res) {
 
     const db = client.db('videos');
     // GridFS Collection
-    db.collection('fs.files').findOne({filename:"11"}, (err, video) => {
+    db.collection('fs.files').findOne({
+      filename: "11"
+    }, (err, video) => {
       if (!video) {
         res.status(404).send("No video uploaded!");
         return;
@@ -621,21 +716,31 @@ app.get("/deepLearning", function (req, res) {
   });
 });
 
-app.get("/discuss" , function(req,res){
+app.get("/discuss", function(req, res) {
   res.render("discuss");
   res.sendFile(__dirname + "/discuss");
 });
 
-app.get("/gethelp" , function(req,res){
+app.get("/gethelp", function(req, res) {
   res.render("gethelp");
   res.sendFile(__dirname + "/gethelp");
 });
 
-app.get("/user" , function(req,res){
+app.get("/user", function(req, res) {
   res.render("gethelp");
   res.sendFile(__dirname + "/user");
 });
 
-app.listen(3000, function(req,res) {
+app.get("/logout", function(req, res) {
+  req.logout(function(err) {
+    if (err) {
+      console.log(err);
+    } else {
+      res.redirect("/");
+    }
+  });
+});
+
+app.listen(3000, function(req, res) {
   console.log("Server started on port 3000");
 });
