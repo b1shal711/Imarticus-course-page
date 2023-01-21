@@ -73,7 +73,7 @@ function(req, res) {
 passport.use(new FacebookStrategy({
     clientID: process.env.APP_ID,
     clientSecret: process.env.APP_SECRET,
-    callbackURL: "https://dark-rose-pike-slip.cyclic.app/auth/facebook/course
+    callbackURL: "https://dark-rose-pike-slip.cyclic.app/auth/facebook/course"
   },
   function(accessToken, refreshToken, profile, done) {
     userProfile = profile;
