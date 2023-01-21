@@ -18,12 +18,17 @@ const app = express();
 
 const path = require('path');
 app.set('view engine', 'ejs');
-
+app.set("trust proxy" , 1);
 app.use(express.static("public"));
 app.use(session({
   resave: false,
   saveUninitialized: true,
-  secret: 'SECRET'
+  secret: 'SECRET',
+  cookies : {
+    sameSite : "none",
+    secure : true,
+    maxAge: 1000*60*60*24
+  }
 }));
 
 app.get('/', function(req, res) {
@@ -49,8 +54,7 @@ passport.deserializeUser(function(obj, cb) {
 passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
-    callbackURL: "/auth/google/course",
-    proxy : true
+    callbackURL: "https://dark-rose-pike-slip.cyclic.app/auth/google/course",
   },
   function(accessToken, refreshToken, profile, done) {
     userProfile = profile;
@@ -74,7 +78,7 @@ function(req, res) {
 passport.use(new FacebookStrategy({
     clientID: process.env.APP_ID,
     clientSecret: process.env.APP_SECRET,
-    callbackURL: "/auth/facebook/course",
+    callbackURL: "https://dark-rose-pike-slip.cyclic.app/auth/facebook/course",
     proxy : true
   },
   function(accessToken, refreshToken, profile, done) {
