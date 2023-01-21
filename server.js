@@ -49,7 +49,7 @@ passport.deserializeUser(function(obj, cb) {
 passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
-    callbackURL: "https://dark-rose-pike-slip.cyclic.app/auth/google/course",
+    callbackURL: "/auth/google/course",
     proxy : true
   },
   function(accessToken, refreshToken, profile, done) {
@@ -74,7 +74,7 @@ function(req, res) {
 passport.use(new FacebookStrategy({
     clientID: process.env.APP_ID,
     clientSecret: process.env.APP_SECRET,
-    callbackURL: "https://dark-rose-pike-slip.cyclic.app/auth/facebook/course",
+    callbackURL: "/auth/facebook/course",
     proxy : true
   },
   function(accessToken, refreshToken, profile, done) {
