@@ -49,7 +49,7 @@ passport.deserializeUser(function(obj, cb) {
 passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
-    callbackURL: "/auth/google/course",
+    callbackURL: "https://dark-rose-pike-slip.cyclic.app/auth/google/course",
     proxy : true
   },
   function(accessToken, refreshToken, profile, done) {
